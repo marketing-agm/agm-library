@@ -10,7 +10,7 @@ bucket_name = "agm-documents"
 [[d1_databases]]
 binding = "DB"
 database_name = "agm-library"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "406e1fd9-8b94-4c03-a081-447e66e85a01"
 
 [vars]
 ENVIRONMENT = "production"
