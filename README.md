@@ -3,7 +3,7 @@
 A secure document management portal built on Cloudflare Pages, D1, R2, and Zero Trust.
 
 ---
-
+ 
 ## Architecture
 
 | Layer | Service | Purpose |
