@@ -1019,35 +1019,6 @@
       background: var(--color-primary-light);
     }
 
-    .add-subfolder-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      padding: 5px 10px;
-      background: transparent;
-      border: 1.5px solid var(--color-border);
-      border-radius: 20px;
-      font-size: 11px;
-      font-family: inherit;
-      font-weight: 500;
-      color: var(--color-gray-500);
-      cursor: pointer;
-      opacity: 0;
-      transform: translateY(2px);
-      transition: all 0.18s ease;
-      white-space: nowrap;
-    }
-
-    .category-card:hover .add-subfolder-btn {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    .add-subfolder-btn:hover {
-      border-color: var(--color-primary);
-      color: var(--color-primary);
-      background: var(--color-primary-light);
-    }
 
     .category-arrow {
       width: 32px;
@@ -3887,12 +3858,6 @@
                 </div>
               </div>
               <div class="category-card-actions">
-                <button class="add-subfolder-btn" onclick="event.stopPropagation(); openNewSubfolderModalFor('${key}')" title="Add a subfolder to ${cat.title}">
-                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M12 5v14M5 12h14"/>
-                  </svg>
-                  Subfolder
-                </button>
                 <div class="category-arrow">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M9 18l6-6-6-6"/>
@@ -4992,11 +4957,6 @@
       } catch (err) {
         showToast('Error: ' + err.message);
       }
-    }
-
-    function openNewSubfolderModalFor(categoryKey) {
-      currentCategory = categoryKey;
-      openNewSubfolderModal();
     }
 
     function openNewSubfolderModal() {
