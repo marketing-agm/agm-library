@@ -4069,15 +4069,19 @@
 
     function renderSubcategoryFolders() {
       const cat = categories[currentCategory];
+      if (!cat) return;
       const grid = document.getElementById('subcategoriesGrid');
       const uncategorizedDocs = documents.filter(d => d.category === currentCategory && !d.subcategory);
-      const hasSubfolders = cat.subcategories.length > 0;
+      const hasSubfolders = Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
       const hasDocs = uncategorizedDocs.length > 0;
 
+      const foldersHeader = document.getElementById('categoryFoldersHeader');
+      const searchRow = document.getElementById('categorySearchRow');
+
       if (!hasSubfolders && !hasDocs) {
-        // Empty state
-        document.getElementById('categoryFoldersHeader').style.display = 'none';
-        document.getElementById('categorySearchRow').style.display = 'none';
+        if (foldersHeader) foldersHeader.style.display = 'none';
+        if (searchRow) searchRow.style.display = 'none';
+        grid.style.display = 'block';
         grid.innerHTML = `
           <div class="folder-empty-state">
             <div class="folder-empty-icon">
@@ -4111,8 +4115,9 @@
         return;
       }
 
-      document.getElementById('categoryFoldersHeader').style.display = 'flex';
-      document.getElementById('categorySearchRow').style.display = 'flex';
+      if (foldersHeader) foldersHeader.style.display = 'flex';
+      if (searchRow) searchRow.style.display = 'flex';
+      grid.style.display = 'grid';
       grid.innerHTML = cat.subcategories.map(subcat => {
         const count = documents.filter(d => d.category === currentCategory && d.subcategory === subcat).length;
         return `
