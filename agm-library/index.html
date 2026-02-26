@@ -4034,17 +4034,23 @@
 
     function renderSubcategoryFolders() {
       const cat = categories[currentCategory];
+      if (!cat) return;
       const grid = document.getElementById('subcategoriesGrid');
+      // Always reset grid visibility (may have been hidden by search)
+      grid.style.display = '';
+      const subcategories = Array.isArray(cat.subcategories) ? cat.subcategories : [];
       const uncategorizedDocs = documents.filter(d => d.category === currentCategory && !d.subcategory);
-      const hasSubfolders = cat.subcategories.length > 0;
+      const hasSubfolders = subcategories.length > 0;
       const hasDocs = uncategorizedDocs.length > 0;
+
+      // Always show the Folders header so "New Subfolder" button is always accessible
+      document.getElementById('categoryFoldersHeader').style.display = 'flex';
 
       if (!hasSubfolders && !hasDocs) {
         // Empty state
-        document.getElementById('categoryFoldersHeader').style.display = 'none';
         document.getElementById('categorySearchRow').style.display = 'none';
         grid.innerHTML = `
-          <div class="folder-empty-state">
+          <div class="folder-empty-state" style="grid-column: 1 / -1;">
             <div class="folder-empty-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/>
@@ -4078,7 +4084,7 @@
 
       document.getElementById('categoryFoldersHeader').style.display = 'flex';
       document.getElementById('categorySearchRow').style.display = 'flex';
-      grid.innerHTML = cat.subcategories.map(subcat => {
+      grid.innerHTML = subcategories.map(subcat => {
         const count = documents.filter(d => d.category === currentCategory && d.subcategory === subcat).length;
         return `
           <div class="subcategory-folder" onclick="openSubcategory('${subcat.replace(/'/g, "\\'")}')">
