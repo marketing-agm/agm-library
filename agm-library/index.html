@@ -1864,30 +1864,6 @@
       display: block;
     }
 
-    .hidden { display: none !important; }
-
-    .category-search-row {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 24px;
-    }
-    .category-search-row.hidden { display: none !important; }
-
-    .category-folders-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-    .category-folders-header.hidden { display: none !important; }
-
-    .category-docs-section { display: block; }
-    .category-docs-section.hidden { display: none !important; }
-
-    .subcategories-grid {
-      display: grid !important;
-    }
-
     .back-link {
       display: inline-flex;
       align-items: center;
@@ -3003,9 +2979,35 @@
         </div>
 
         <!-- Category View -->
-        <!-- Category View: fully rebuilt by openCategory() each time -->
         <div id="categoryView" class="category-view">
-          <div id="categoryViewBody"></div>
+          <div id="categoryBreadcrumb" class="breadcrumb">
+            <span class="breadcrumb-item" onclick="showHomeView()">Dashboard</span>
+            <span class="breadcrumb-separator">›</span>
+            <span class="breadcrumb-current" id="breadcrumbCategory">Category</span>
+          </div>
+          <div id="categorySearchRow" style="display: flex; justify-content: flex-end; margin-bottom: 24px;">
+            <div class="folder-search-bar">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/>
+                <path d="M21 21l-4.35-4.35"/>
+              </svg>
+              <input type="text" class="folder-search-input" placeholder="Search in this category..." id="categorySearchInput" oninput="handleCategorySearch()">
+            </div>
+          </div>
+          <div id="categoryFoldersHeader" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+            <div class="section-title">Folders</div>
+            <button class="new-folder-btn" onclick="openNewSubfolderModal()">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M12 5v14M5 12h14"/>
+              </svg>
+              New Subfolder
+            </button>
+          </div>
+          <div class="subcategories-grid" id="subcategoriesGrid"></div>
+          <div id="categoryDocumentsSection" style="display: none;">
+            <div class="section-title" style="margin-bottom: 16px;">Documents</div>
+            <div class="documents-list" id="categoryDocuments"></div>
+          </div>
         </div>
 
         <!-- Subcategory View -->
@@ -4048,13 +4050,18 @@
       currentCategory = categoryKey;
       currentSubcategory = null;
       const cat = categories[categoryKey];
-
+      
       hideAllViews();
       document.getElementById('categoryView').classList.add('active');
+      
       document.getElementById('pageTitle').textContent = cat.title;
       document.getElementById('pageDescription').textContent = cat.description;
-
-      // Rebuild the entire category view body from scratch — no stale state possible
+      
+      // Update breadcrumb
+      document.getElementById('breadcrumbCategory').textContent = cat.title;
+      document.getElementById('categorySearchInput').value = '';
+      
+      // Render subcategory folders
       renderSubcategoryFolders();
       updateSidebarActive(categoryKey);
       closeSidebarMobile();
@@ -4062,22 +4069,16 @@
 
     function renderSubcategoryFolders() {
       const cat = categories[currentCategory];
-      if (!cat) return;
-      const body = document.getElementById('categoryViewBody');
+      const grid = document.getElementById('subcategoriesGrid');
       const uncategorizedDocs = documents.filter(d => d.category === currentCategory && !d.subcategory);
-      const hasSubfolders = Array.isArray(cat.subcategories) && cat.subcategories.length > 0;
+      const hasSubfolders = cat.subcategories.length > 0;
       const hasDocs = uncategorizedDocs.length > 0;
 
-      // Breadcrumb always present
-      const breadcrumb = `
-        <div class="breadcrumb" style="margin-bottom:24px;">
-          <span class="breadcrumb-item" onclick="showHomeView()">Dashboard</span>
-          <span class="breadcrumb-separator">›</span>
-          <span class="breadcrumb-current">${cat.title}</span>
-        </div>`;
-
       if (!hasSubfolders && !hasDocs) {
-        body.innerHTML = breadcrumb + `
+        // Empty state
+        document.getElementById('categoryFoldersHeader').style.display = 'none';
+        document.getElementById('categorySearchRow').style.display = 'none';
+        grid.innerHTML = `
           <div class="folder-empty-state">
             <div class="folder-empty-icon">
               <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
@@ -4085,7 +4086,9 @@
               </svg>
             </div>
             <div class="folder-empty-title">This folder is empty</div>
-            <div class="folder-empty-desc">Get started by uploading a document or creating a subfolder.</div>
+            <div class="folder-empty-desc">
+              Get started by uploading a document or organizing things with a subfolder.
+            </div>
             <div class="folder-empty-actions">
               <button class="folder-empty-btn primary" onclick="openUploadModal()">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -4102,11 +4105,15 @@
                 Create Subfolder
               </button>
             </div>
-          </div>`;
+          </div>
+        `;
+        document.getElementById('categoryDocumentsSection').style.display = 'none';
         return;
       }
 
-      const subfolderCards = cat.subcategories.map(subcat => {
+      document.getElementById('categoryFoldersHeader').style.display = 'flex';
+      document.getElementById('categorySearchRow').style.display = 'flex';
+      grid.innerHTML = cat.subcategories.map(subcat => {
         const count = documents.filter(d => d.category === currentCategory && d.subcategory === subcat).length;
         return `
           <div class="subcategory-folder" onclick="openSubcategory('${subcat.replace(/'/g, "\\'")}')">
@@ -4124,36 +4131,18 @@
                 <path d="M9 18l6-6-6-6"/>
               </svg>
             </div>
-          </div>`;
-      }).join('');
-
-      const docsHtml = hasDocs ? `
-        <div style="margin-top:32px;">
-          <div class="section-title" style="margin-bottom:16px;">Documents</div>
-          <div class="documents-list">${uncategorizedDocs.map(doc => renderDocumentRow(doc)).join('')}</div>
-        </div>` : '';
-
-      body.innerHTML = breadcrumb + `
-        <div style="display:flex; justify-content:flex-end; margin-bottom:24px;">
-          <div class="folder-search-bar">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input type="text" class="folder-search-input" id="categorySearchInput" placeholder="Search in this category..." oninput="handleCategorySearch()">
           </div>
-        </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-          <div class="section-title">Folders</div>
-          <button class="new-folder-btn" onclick="openNewSubfolderModal()">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-              <path d="M12 5v14M5 12h14"/>
-            </svg>
-            New Subfolder
-          </button>
-        </div>
-        <div class="subcategories-grid" id="subcategoriesGrid">${subfolderCards}</div>
-        ${docsHtml}`;
+        `;
+      }).join('');
+      
+      // Show documents section if there are uncategorized docs
+      const docsSection = document.getElementById('categoryDocumentsSection');
+      if (hasDocs) {
+        docsSection.style.display = 'block';
+        document.getElementById('categoryDocuments').innerHTML = uncategorizedDocs.map(doc => renderDocumentRow(doc)).join('');
+      } else {
+        docsSection.style.display = 'none';
+      }
     }
 
     function openSubcategory(subcatName) {
@@ -4197,42 +4186,31 @@
     }
 
     function renderCategoryDocuments(searchQuery = '') {
-      if (!searchQuery) { renderSubcategoryFolders(); return; }
-
-      const body = document.getElementById('categoryViewBody');
-      const cat = categories[currentCategory];
-      if (!cat) return;
-
-      const q = searchQuery.toLowerCase();
-      const docs = documents.filter(d => d.category === currentCategory && (
-        d.name.toLowerCase().includes(q) ||
-        (d.tags || []).some(t => t.toLowerCase().includes(q)) ||
-        (d.subcategory && d.subcategory.toLowerCase().includes(q))
-      ));
-
-      const docsHtml = docs.length === 0
-        ? '<div class="empty-state"><h3>No documents found</h3><p>Try different keywords</p></div>'
-        : docs.map(doc => renderDocumentRow(doc)).join('');
-
-      body.innerHTML = `
-        <div class="breadcrumb" style="margin-bottom:24px;">
-          <span class="breadcrumb-item" onclick="showHomeView()">Dashboard</span>
-          <span class="breadcrumb-separator">›</span>
-          <span class="breadcrumb-current">${cat.title}</span>
-        </div>
-        <div style="display:flex; justify-content:flex-end; margin-bottom:24px;">
-          <div class="folder-search-bar">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
-            </svg>
-            <input type="text" class="folder-search-input" id="categorySearchInput"
-              placeholder="Search in this category..."
-              oninput="handleCategorySearch()"
-              value="${searchQuery.replace(/"/g, '&quot;')}">
-          </div>
-        </div>
-        <div class="documents-list">${docsHtml}</div>`;
+      let docs = documents.filter(d => d.category === currentCategory);
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        docs = docs.filter(d => d.name.toLowerCase().includes(q) || d.tags.some(t => t.toLowerCase().includes(q)) || (d.subcategory && d.subcategory.toLowerCase().includes(q)));
+      }
+      
+      // If searching, show all matching docs
+      if (searchQuery) {
+        const container = document.getElementById('categoryDocuments');
+        const docsSection = document.getElementById('categoryDocumentsSection');
+        docsSection.style.display = 'block';
+        document.querySelector('#categoryView .section-title').style.display = 'none';
+        document.getElementById('subcategoriesGrid').style.display = 'none';
+        
+        if (docs.length === 0) {
+          container.innerHTML = `<div class="empty-state"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><h3>No documents found</h3><p>Try different keywords</p></div>`;
+        } else {
+          container.innerHTML = docs.map(doc => renderDocumentRow(doc)).join('');
+        }
+      } else {
+        // Reset to folder view
+        document.querySelector('#categoryView .section-title').style.display = 'block';
+        document.getElementById('subcategoriesGrid').style.display = 'grid';
+        renderSubcategoryFolders();
+      }
     }
 
     function handleCategorySearch() {
@@ -5056,10 +5034,9 @@
         });
 
         categories[currentCategory].subcategories = subcategories;
-        renderSubcategoryFolders();
-        updateSubcategoryOptions();
         closeNewSubfolderModal();
         showToast(`Subfolder "${name}" created`);
+        openCategory(currentCategory);
       } catch (err) {
         showToast('Error: ' + err.message);
       }
