@@ -4057,6 +4057,12 @@
       document.getElementById('pageTitle').textContent = cat.title;
       document.getElementById('pageDescription').textContent = cat.description;
       
+      // Explicitly reset all display states to avoid stale inline styles
+      document.getElementById('categorySearchRow').style.display = 'flex';
+      document.getElementById('categoryFoldersHeader').style.display = 'flex';
+      document.getElementById('subcategoriesGrid').style.display = 'grid';
+      document.getElementById('categoryDocumentsSection').style.display = 'none';
+
       // Update breadcrumb
       document.getElementById('breadcrumbCategory').textContent = cat.title;
       document.getElementById('categorySearchInput').value = '';
